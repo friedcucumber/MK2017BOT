@@ -1,10 +1,16 @@
+#!/usr/bin/python3.4
 # -*- coding: utf-8 -*-
+import telebot
 import config
 import time
 import os
 import datetime
+import logging
+import utils
+import random
+import sqlite3
+#import SQLighter
 
-import telebot
 from telebot import types
 
 codes=['орел', 'персик', 'пупок','мокруха']
@@ -15,11 +21,39 @@ hints=[['соседняя область', 'птица такая есть','о�
 bot = telebot.TeleBot(config.token)
 user_dict = {}
 
+logger = telebot.logger
+telebot.logger.setLevel(logging.DEBUG) # Outputs debug messages to console.
+
+class SQLighter:
+
+    def __init__(self, database):
+        self.connection = sqlite3.connect(database)
+        self.cursor = self.connection.cursor()
+
+    def select_all(self):
+        """ Получаем все строки """
+        with self.connection:
+            return self.cursor.execute('SELECT * FROM Players').fetchall()
+
+    def select_single(self, rownum):
+        """ Получаем одну строку с номером rownum """
+        with self.connection:
+            return self.cursor.execute('SELECT * FROM Players WHERE id = ?', (rownum,)).fetchall()[0]
+
+    def count_rows(self):
+        """ Считаем количество строк """
+        with self.connection:
+            result = self.cursor.execute('SELECT * FROM Players').fetchall()
+            return len(result)
+
+    def close(self):
+        """ Закрываем текущее соединение с БД """
+        self.connection.close()
+
 
 class User:
     def __init__(self, name):
         self.name = name
-        self.age = None
         self.team = None
 
 @bot.message_handler(commands=['testmusic'])
@@ -39,7 +73,24 @@ def send_picture(message, name):
             res = bot.send_photo(message.chat.id, f, None)
             print(res)
         time.sleep(2)
+        
+@bot.message_handler(commands=['game'])
+def game(message):
+    # Подключаемся к БД
+    db_worker = SQLighter(config.database_name)
+    # Получаем случайную строку из БД
+    #row = db_worker.select_single(random.randint(1, utils.get_rows_count()))
+    row = db_worker.select_single(2)
+    # Формируем разметку
+    markup = utils.generate_markup(row[1], row[2])
+    # Отправляем аудиофайл с вариантами ответа
+    bot.send_message(message.chat.id, row[1]+' '+str(row[2]))
+    # Включаем "игровой режим"
+   #utils.set_user_game(message.chat.id, row[2])
+    # Отсоединяемся от БД
+    db_worker.close()
 
+    
 # Handle '/start' and '/help'
 @bot.message_handler(commands=['help', 'start'])
 def send_welcome(message):
@@ -67,6 +118,7 @@ def process_team_step(message):
         markup = types.ReplyKeyboardMarkup(one_time_keyboard=True)
         markup.add('Кирилл', 'Максим')
         msg = bot.send_message(chat_id, 'Кто твой руководитель?', reply_markup=markup)
+       # msg = bot.send_message(chat_id, config.database_name)
         bot.register_next_step_handler(msg, process_choose_step)
     except Exception as e:
         bot.reply_to(message, 'oooops')
@@ -100,34 +152,34 @@ def give_hint(message):
         bot.send_message(message.chat.id, "Подсказки кончились!"+str(hintcount)+"из"+str(len(hints[currentquestion])))
         
 
+def give_next_question(msg, code):
+    global currentquestion
+    global hintcount
+    hintcount=0
+    currentquestion +=1
+    bot.send_message(msg.chat.id, "Следующий вопрос:"+str(questions[code])) 
 
 #@bot.message_handler(commands=['код'])
 @bot.message_handler(func=lambda message: message.text in codes)
 def game(message):
     global currentquestion
     global codeindex
+    global hintcount
     codeindex=codes.index(message.text)
     bot.send_message(message.chat.id, "Код №"+str(codeindex+1)+" принят!")
     if codeindex == 0:
         send_picture(message, 'photo')
-        global hintcount
-        hintcount=0
-        currentquestion +=1
-        bot.send_message(message.chat.id, "Следующий вопрос:"+str(questions[codeindex])) 
+        give_next_question(message, codeindex)
        #answerssum +=codeindex
         
 #    questionindex=questions.index(codeindex)
     if codeindex == 1:
         send_music(message, 'song')
-        hintcount=0
-        currentquestion +=1
-        bot.send_message(message.chat.id, "Следующий вопрос:"+str(questions[codeindex])) 
+        give_next_question(message, codeindex)
         #answerssum +=codeindex
                                  
     if codeindex == 2:
-        hintcount=0
-        currentquestion +=1
-        bot.send_message(message.chat.id, "Следующий вопрос:"+str(questions[codeindex])) 
+        give_next_question(message, codeindex)
        # answerssum +=codeindex
         
     if codeindex == 3:
@@ -146,4 +198,9 @@ def game(message):
 #    hintcount=0    
 #    bot.send_message(message.chat.id, "Код неверный")
 
-bot.polling()
+#bot.polling()
+
+if __name__ == '__main__':
+    utils.count_rows()
+    random.seed()
+    bot.polling(none_stop=True)
