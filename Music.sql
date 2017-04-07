@@ -1,0 +1,7 @@
+BEGIN TRANSACTION;
+CREATE TABLE `Music` (
+	`Id`	INTEGER PRIMARY KEY AUTOINCREMENT,
+	`file_id`	TEXT,
+	`right_answer`	TEXT
+);
+COMMIT;
