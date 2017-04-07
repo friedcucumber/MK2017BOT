@@ -23,9 +23,9 @@ class User:
         self.team = None
 
 @bot.message_handler(commands=['testmusic'])
-def send_music(message):
+def send_music(message, name):
     for file in os.listdir('media/'):
-        if file.split('song.')[-1] == 'ogg':
+        if file.split(name+'.')[-1] == 'ogg':
             f = open('media/'+file, 'rb')
             res = bot.send_voice(message.chat.id, f, None)
             print(res)
@@ -92,8 +92,8 @@ def give_hint(message):
     hintnumber=len(hints[currentquestion])
     if 0 < (len(hints[currentquestion])-hintcount) <= hintnumber:
         msg = bot.reply_to(message, "Первая подсказка:")
-        bot.send_message(message.chat.id, "codeindex"+str(currentquestion)+"сколько"+str(len(hints[currentquestion])))
-        bot.send_message(message.chat.id, hints[currentquestion][hintcount]+str(hintcount)+str(len(hints[currentquestion])))
+        #bot.send_message(message.chat.id, "codeindex")
+        bot.send_message(message.chat.id, hints[currentquestion][hintcount])
         hintcount += 1
     else:
       #  bot.send_message(message.chat.id, "codeindexlen"+str(len(hints[codeindex][hintcount]))+"codeindex"+str(hints[codeindex][hintcount]))
@@ -103,27 +103,31 @@ def give_hint(message):
 
 #@bot.message_handler(commands=['код'])
 @bot.message_handler(func=lambda message: message.text in codes)
-def command_text_hi(message):
+def game(message):
     global currentquestion
     global codeindex
     codeindex=codes.index(message.text)
-    bot.send_message(message.chat.id, "Код №"+str(codeindex)+" принят! (нужно+1 к номеру)")
+    bot.send_message(message.chat.id, "Код №"+str(codeindex+1)+" принят!")
     if codeindex == 0:
-        send_picture(message, 'photo');
+        send_picture(message, 'photo')
         global hintcount
         hintcount=0
         currentquestion +=1
+        bot.send_message(message.chat.id, "Следующий вопрос:"+str(questions[codeindex])) 
        #answerssum +=codeindex
         
 #    questionindex=questions.index(codeindex)
     if codeindex == 1:
+        send_music(message, 'song')
         hintcount=0
         currentquestion +=1
+        bot.send_message(message.chat.id, "Следующий вопрос:"+str(questions[codeindex])) 
         #answerssum +=codeindex
                                  
     if codeindex == 2:
         hintcount=0
         currentquestion +=1
+        bot.send_message(message.chat.id, "Следующий вопрос:"+str(questions[codeindex])) 
        # answerssum +=codeindex
         
     if codeindex == 3:
@@ -134,7 +138,7 @@ def command_text_hi(message):
         bot.send_message(message.chat.id, "Конец игры! Ваше время "+time.strftime('%H:%M:%S', time.gmtime(endtime)))
 
     
-    bot.send_message(message.chat.id, "Следующий вопрос:"+str(questions[codeindex]))    
+       
 #@bot.message_handler(func=lambda message: message.text not in codes)
 #def now_answer(message):
 #    global codeindex
