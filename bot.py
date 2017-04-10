@@ -50,7 +50,7 @@ class SQLighter:
 
     def player_exists(self, name):
         with self.connection:
-           return self.cursor.execute('SELECT EXISTS(SELECT * FROM Players WHERE Name = ?)', (name,)).fetchone()
+           return self.cursor.execute('SELECT EXISTS(SELECT * FROM Players WHERE Name = ?)', (name,)).fetchall()
            
     def read_last_code(self, name):
         """ Получаем одну строку с номером rownum """
@@ -153,14 +153,14 @@ def create_new_player (chatid, username, starttime):
        row = db_worker.create_new_player(username, starttime)
        db_worker.close()
        
-def add_team (chatid, username, team):
+def add_team (username, team):
        #chat_id = message.chat.id
        #chat_id = message
        db_worker = SQLighter(config.database_name)
       # user = user_dict[message.chat.id]
        #team_name=user.team
        #if team_name == "Максим":
-       row = db_worker.create_new_player(username, team)
+       db_worker.add_team(username, team)
        db_worker.close()
                         
 def player_exists (name):
@@ -192,7 +192,7 @@ def send_welcome(message):
     username=message.chat.username
     bot.send_message(chat_id, username)
     bot.send_message(chat_id, str(player_exists(username)))
-    if player_exists("sdfsdf")==0:
+    if str(player_exists(username))=="[(0,)]":
         bot.send_message(chat_id, str(player_exists(username)))
         create_new_player(chat_id, message.chat.username, starttime)
         msg = bot.send_message(chat_id, """\
@@ -225,10 +225,12 @@ def process_choose_step(message):
     try:
         chat_id = message.chat.id
         team = message.text
+        username=message.chat.username
         user = user_dict[chat_id]
         if (team == u'Кирилл') or (team == u'Максим'):
             user.team = team
-            add_team(message.chat.username, team)
+            #bot.send_message(chat_id, user.team)
+            add_team(username, user.team)
         else:
             raise Exception()
         bot.send_message(chat_id, 'Удачной игры ' + user.name + '\nТы в команде:' + user.team)        
