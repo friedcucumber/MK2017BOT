@@ -62,6 +62,8 @@ questions=["""Задание 1.2
 """]
 hints=[['соседняя область', 'птица такая есть','орел, тупой что ли?'],['есть такая картина','Эй, ты просто ******'],['смотри, чтобы не развязался'],['на жаргоне думай','очень влажно']]
 
+#global gamestarted
+#gamestarted=0
 
 bot = telebot.TeleBot(config.token)
 user_dict = {}
@@ -281,8 +283,8 @@ def welcome(message):
 def send_welcome(message):
     chat_id = message.chat.id
    # bot.send_message(chat_id, message.from_user.username)
-    global gamestarted
-    gamestarted=0
+    #global gamestarted
+    #gamestarted=0
     global hintcount
     hintcount =0
     global codeindex
@@ -343,8 +345,9 @@ def process_choose_step(message):
         bot.send_message(chat_id, "Введите название этой песни?")  
         send_music(message, 'song#1')
         bot.send_message(chat_id, "Формат ответа: песни, слитно, без пробелов, с маленькой буквы.")
-        global gamestarted
-        gamestarted=1
+        #global gamestarted
+        #getstarted==1
+        bot.send_message(chat_id, gamestarted)
     except Exception as e:
         bot.reply_to(message, 'oooops')
 
@@ -375,10 +378,11 @@ def game(message):
     global currentquestion
     global codeindex
     global hintcount
-    global questsum
+    global questsumt
+    global getstarted
     chat_id = message.chat.id
     #user = user_dict[chat_id]
-    if message.text in codes and gamestarted==1:
+    if message.text in codes:
         codeindex=codes.index(message.text)
         try:
             if codeindex == 0:
@@ -455,14 +459,15 @@ def game(message):
                 save_code_to_base(chat_id, message.from_user.username, str(codes[codeindex]))
             #answerssum +=codeindex
                 endtime=message.date-starttime
+                global getstarted
+                getstarted==0
                 bot.send_message(message.chat.id, "Конец игры! Ваше время "+time.strftime('%H:%M:%S', time.gmtime(endtime)))         
             else:
                 bot.send_message(message.chat.id, "Код неверный!")
         except:
             bot.send_message(message.chat.id, "Что-то пошло не так!")
-    elif message.text not in codes and gamestarted==1:    
+    elif message.text not in codes:    
         bot.send_message(message.chat.id, "Неверный код!")
-    
     
 #@bot.message_handler(func=lambda message: message.text not in codes)
 #def now_answer(message):
