@@ -13,7 +13,7 @@ import sqlite3
 
 from telebot import types
 
-codes=['hafanana', 'тамагочи', 'тетрис','корольлев',]
+codes=['hafanana', 'тамагочи', 'тетрис','корольлев','писание','зачарованные','битлджус','198','150421042017']
 questions=["""Задание 1.2
 «Отлично!» - вопит Валдис! Валдис жмет вам руки, передает вам свои поздравления и привет тоже передает…и внезапно просит об услуге – его телефон разрядился, а ему нужно срочно покормить своего домовенка!
 Примечание: Загадано точное место. 2ГИС в помощь). Звонить никуда не нужно) Код вы найдете на одном из фонарных столбов, около загаданного места.
@@ -27,7 +27,39 @@ questions=["""Задание 1.2
 
 Примечание: задание берется из машины, ехать никуда не нужно)
 
-Формат ответа: 2 слова на русском, маленькими буквами без пробелов"""]
+Формат ответа: 2 слова на русском, маленькими буквами без пробелов""", """Задание 3.2
+
+А ведь в нашем городе тоже есть Лев, который идёт.. за водкой!)
+
+Примечание: загадано конкретное место. Ищите слова под ногами.
+
+Формат ответа: первое слово цитаты на русском, маленькими буквами, без пробелов.
+""","""Задание 4.1
+
+Вы услышали грохот над городом и таинственный голос прошептал:
+«ЕНАОРЫАЗАЧНВ!»
+«Что за белиберда!» - подумали вы.
+
+Примечние: задание берется из машины, ехать никуда не нужно)
+
+Формат ответа: слово на русском маленькими буквами.
+""","""Задание 4.2
+
+Так вот что за грохот вы слышали! Это бомбанул Валодин пердак после очередной игры в доту!
+Прю Пайпер и Фиби попали в беду! Изучая книгу таинств, сестры произнесли какое-то заклинание и оказались в Туле! Да ещё и в прошлом! Последний раз их видели в этих местах:
+""","""Задание 5
+
+
+Вы спасли сестер! Самое время немного подкрепиться! Помните, как в детстве Вы хотели попасть  именно туда? А попав - попробовать хотелось ВСЁ! Но предпочтение в основном отдавалось именно определенной позиции в меню! Преодолев препятствие в виде длиннющие очереди и получив наконец заветный пакет с обедом вы стремились скорее развернуть его и узнать - что же досталось вам в этот раз, помимо булки с сыром, картошки и газировки?
+
+
+Формат ответа: цифры""","""Задание 6.1
+
+Подкрепились! Теперь пришло время...СПАСАТЬ МИР! 
+С вами в машине присутствует агент под прикрытием, у которого в кармане есть билеты на планетарный круизный корабль-гранд-отель! 
+
+Примечание: выдвигайтесь к планетарному круизному корабль-гранд-отелю! Для перехода на следующее задание поговорите с агентами. Не забудьте ваши билеты - без них вы не сможете попасть на корабль!
+"""]
 hints=[['соседняя область', 'птица такая есть','орел, тупой что ли?'],['есть такая картина','Эй, ты просто ******'],['смотри, чтобы не развязался'],['на жаргоне думай','очень влажно']]
 
 
@@ -56,11 +88,21 @@ class SQLighter:
     def create_new_player(self, username, starttime):
         with self.connection:
             self.cursor.execute('INSERT INTO Players(Name, Time_Gaming) VALUES(?,?)', (username, starttime))
+            self.cursor.execute('INSERT INTO Teams(Teammates) VALUES(?)', (username, ))
             
     def add_team(self, username, team):
         with self.connection:
            self.cursor.execute('UPDATE Players SET Team = ? WHERE Name = ?', (team, username))
-
+           self.cursor.execute('UPDATE Teams SET TeamName = ? WHERE Teammates = ?', (team, username))
+           
+    def read_team_sql(self, username):
+        with self.connection:
+            return self.cursor.execute('SELECT Team FROM Players WHERE Name = ?', (username, )).fetchall()
+           
+    def show_teammates(self, teamname):
+        with self.connection:
+            return self.cursor.execute('SELECT Teammates FROM Teams WHERE TeamName = ?', [teamname]).fetchall()
+            
     def player_exists(self, name):
         with self.connection:
            return self.cursor.execute('SELECT EXISTS(SELECT * FROM Players WHERE Name = ?)', (name,)).fetchall()
@@ -68,12 +110,14 @@ class SQLighter:
     def read_last_code(self, name):
         """ Получаем одну строку с номером rownum """
         with self.connection:
-            return self.cursor.execute('SELECT Last_Answered_Question FROM Players WHERE Name = ?', (name,)).fetchall()[0]
+           return self.cursor.execute('SELECT Last_Answered_Question FROM Players WHERE Name = ?', (name,)).fetchall()
+           # return self.cursor.execute('SELECT answered_code FROM Teams WHERE TeamName = ?', (teamname,)).fetchall()
 
     def write_last_code(self, code, name):
         """ Получаем одну строку с номером rownum """
         with self.connection:
             self.cursor.execute('UPDATE Players SET Last_Answered_Question = ? WHERE Name = ?', (code, name))
+            self.cursor.execute('UPDATE Teams SET answered_code = ? WHERE Teammates = ?', (code, name))
 
     def count_rows(self):
         """ Считаем количество строк """
@@ -108,6 +152,25 @@ def send_picture(message, name):
             res = bot.send_photo(message.chat.id, f, None)
             print(res)
         time.sleep(1)
+
+
+@bot.message_handler(commands=['testteam'])
+def testteams(message):
+    db_worker = SQLighter(config.database_name)
+    name="Кирилл"
+    #row=bot.send_message(message.chat.id, "1")
+    #db_worker.show_teammates(name)
+    teammates=str(db_worker.show_teammates(name))
+    teammates=teammates.replace("(","")
+    teammates=teammates.replace(")","")
+    teammates=teammates.replace("\'","")
+    bot.send_message(message.chat.id, teammates)
+    db_worker.close()
+    #bot.send_message(message.chat.id, "2")
+    
+    
+    
+
         
 #@bot.message_handler(commands=['game'])
 def game(message):
@@ -146,15 +209,16 @@ def save_code_to_base (chatid, user, code):
 @bot.message_handler(commands=['jump'])
 def read_code_from_base (message):
        chat_id = message.chat.id
-       user = user_dict[chat_id]
+       #user = user_dict[chat_id]
        #chat_id = message
        db_worker = SQLighter(config.database_name)
       # user = user_dict[message.chat.id]
-       team_name=user.team
+       #name=db_worker.read_team_sql(message.from_user.username)
+       #bot.send_message(chat_id, teamname)
        #if team_name == "Максим":
-       row = db_worker.read_last_code(team_name)
+       row=db_worker.read_last_code(message.from_user.username)
+       bot.send_message(chat_id, row)
        db_worker.close()
-       bot.send_message(message, str(row))
 
 def create_new_player (chatid, username, starttime):
        #chat_id = message.chat.id
@@ -175,6 +239,13 @@ def add_team (username, team):
        #if team_name == "Максим":
        db_worker.add_team(username, team)
        db_worker.close()
+
+def read_team(username):
+       db_worker = SQLighter(config.database_name)
+       return db_worker.read_team_sql(username)
+       db_worker.close()
+
+    
                         
 def player_exists (name):
        #chat_id = message.chat.id
@@ -210,6 +281,8 @@ def welcome(message):
 def send_welcome(message):
     chat_id = message.chat.id
    # bot.send_message(chat_id, message.from_user.username)
+    global gamestarted
+    gamestarted=0
     global hintcount
     hintcount =0
     global codeindex
@@ -268,8 +341,10 @@ def process_choose_step(message):
         bot.send_message(chat_id, "Задание 1.1.  Добрейшего денечка уважаемые игроки! Вы попали на шоу Угадай мелодию! И первый же вопрос Вам задаст Валдис Пельш!")     
         send_picture(message, 'valdis')  
         bot.send_message(chat_id, "Введите название этой песни?")  
-        send_music(message, 'song')
-        bot.send_message(chat_id, "Формат ответа: песни, слитно, без пробелов, с маленькой буквы.")  
+        send_music(message, 'song#1')
+        bot.send_message(chat_id, "Формат ответа: песни, слитно, без пробелов, с маленькой буквы.")
+        global gamestarted
+        gamestarted=1
     except Exception as e:
         bot.reply_to(message, 'oooops')
 
@@ -295,64 +370,100 @@ def give_next_question(msg, code):
     bot.send_message(msg.chat.id, str(questions[code])) 
 
 #@bot.message_handler(commands=['код'])
-@bot.message_handler(func=lambda message: message.text in codes)
+@bot.message_handler(func=lambda message: message.text)
 def game(message):
     global currentquestion
     global codeindex
     global hintcount
     global questsum
     chat_id = message.chat.id
-    user = user_dict[chat_id]
-    codeindex=codes.index(message.text)
-    try:
-        if codeindex == 0 and questsum==0:
-            bot.send_message(message.chat.id, "Код принят!")
-        #send_picture(message, 'photo')
-            give_next_question(message, codeindex)
-       # bot.send_message(message.chat.id, "пупок")
-            save_code_to_base(chat_id, message.from_user.username, str(codes[codeindex]))
-            questsum=questsum+18
-            #bot.send_message(message.chat.id, questsum)
-       #answerssum +=codeindex
-        
-#    questionindex=questions.index(codeindex)
-        if codeindex == 1 and questsum==18:
-            bot.send_message(message.chat.id, "Код принят!")
-            save_code_to_base(chat_id, message.from_user.username, str(codes[codeindex]))
-        #send_music(message, 'song')
-            give_next_question(message, codeindex)
-            send_picture(message, 'cool-pike')
-            questsum=questsum+10
-            bot.send_message(message.chat.id, """ Примечание: загадано точное место. Вам потребуется фотокамера. Бумагу с данными на загаданном месте НЕ СРЫВАТЬ!
-        
-Формат ответа: одно слово на русском.""")
-        else:
-            #bot.send_message(message.chat.id, questsum)
-            bot.send_message(message.chat.id, "Код неверный!")
-        #answerssum +=codeindex
-                                 
-        if codeindex == 2 and questsum==28:
-            give_next_question(message, codeindex)
-            save_code_to_base(chat_id, message.from_user.username, str(codes[codeindex]))
-            questsum=questsum+12
+    #user = user_dict[chat_id]
+    if message.text in codes and gamestarted==1:
+        codeindex=codes.index(message.text)
+        try:
+            if codeindex == 0:
+                bot.send_message(message.chat.id, "Код принят!")
+                save_code_to_base(chat_id, message.from_user.username, str(codes[codeindex]))
+            #send_picture(message, 'photo')
+                give_next_question(message, codeindex)
+           # bot.send_message(message.chat.id, "пупок")
+                questsum=questsum+18
+                #bot.send_message(message.chat.id, questsum)
+           #answerssum +=codeindex
+            
+    #    questionindex=questions.index(codeindex)
+            elif codeindex == 1:
+                bot.send_message(message.chat.id, "Код принят!")
+                save_code_to_base(chat_id, message.from_user.username, str(codes[codeindex]))
+            #send_music(message, 'song')
+                give_next_question(message, codeindex)
+                send_picture(message, 'cool-pike')
+                questsum=questsum+10
+                bot.send_message(message.chat.id, """ Примечание: загадано точное место. Вам потребуется фотокамера. Бумагу с данными на загаданном месте НЕ СРЫВАТЬ!
+            
+    Формат ответа: одно слово на русском.""")
+                                     
+            elif codeindex == 2:
+                bot.send_message(message.chat.id, "Код принят!")
+                give_next_question(message, codeindex)
+                save_code_to_base(chat_id, message.from_user.username, str(codes[codeindex]))
+                questsum=questsum+12
 
-        else:
-            bot.send_message(message.chat.id, "Код неверный!")
-       # answerssum +=codeindex
-        
-        if codeindex == 3 and questsum==40:
-            hintcount=0
-            currentquestion +=1
-            save_code_to_base(chat_id, message.from_user.username, str(codes[codeindex]))
-        #answerssum +=codeindex
-            endtime=message.date-starttime
-            bot.send_message(message.chat.id, "Конец игры! Ваше время "+time.strftime('%H:%M:%S', time.gmtime(endtime)))
-        else:
-            bot.send_message(message.chat.id, "Код неверный!")
+            
+            elif codeindex == 3:
+                bot.send_message(message.chat.id, "Код принят!")
+                give_next_question(message, codeindex)
+                save_code_to_base(chat_id, message.from_user.username, str(codes[codeindex]))
+                questsum=questsum+12
+            
+            elif codeindex == 4:
+                bot.send_message(message.chat.id, "Код принят!")
+                give_next_question(message, codeindex)
+                save_code_to_base(chat_id, message.from_user.username, str(codes[codeindex]))
+                questsum=questsum+12
+            
+            elif codeindex == 5:
+                bot.send_message(message.chat.id, "Код принят!")
+                give_next_question(message, codeindex)
+                send_picture(message, 'pru')
+                send_picture(message, 'piper')
+                send_picture(message, 'fibi')
+                bot.send_message(message.chat.id, """
+Скорее осмотрите эти места! Возможно сестры оставили для вас там подсказки!
 
-    except:
-        bot.send_message(message.chat.id, "Код неверный!")
-       
+Примечание: Задание составное из трех частей. Всего загаданных мест три. Вам нужно собрать составной код и вбить его в правильном порядке целиком без пробелов в движок.""")
+                
+                save_code_to_base(chat_id, message.from_user.username, str(codes[codeindex]))
+                questsum=questsum+12
+            
+            elif codeindex == 6:
+                bot.send_message(message.chat.id, "Код принят!")
+                give_next_question(message, codeindex)
+                save_code_to_base(chat_id, message.from_user.username, str(codes[codeindex]))
+                questsum=questsum+12
+            
+            elif codeindex == 7:
+                bot.send_message(message.chat.id, "Код принят!")
+                give_next_question(message, codeindex)
+                save_code_to_base(chat_id, message.from_user.username, str(codes[codeindex]))
+                questsum=questsum+12
+            
+            elif codeindex == 8:
+                hintcount=0
+                currentquestion +=1                
+                bot.send_message(message.chat.id, "Код принят!")
+                save_code_to_base(chat_id, message.from_user.username, str(codes[codeindex]))
+            #answerssum +=codeindex
+                endtime=message.date-starttime
+                bot.send_message(message.chat.id, "Конец игры! Ваше время "+time.strftime('%H:%M:%S', time.gmtime(endtime)))         
+            else:
+                bot.send_message(message.chat.id, "Код неверный!")
+        except:
+            bot.send_message(message.chat.id, "Что-то пошло не так!")
+    elif message.text not in codes and gamestarted==1:    
+        bot.send_message(message.chat.id, "Неверный код!")
+    
+    
 #@bot.message_handler(func=lambda message: message.text not in codes)
 #def now_answer(message):
 #    global codeindex
