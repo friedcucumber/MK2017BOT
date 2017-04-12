@@ -62,8 +62,8 @@ questions=["""Задание 1.2
 """]
 hints=[['соседняя область', 'птица такая есть','орел, тупой что ли?'],['есть такая картина','Эй, ты просто ******'],['смотри, чтобы не развязался'],['на жаргоне думай','очень влажно']]
 
-#global gamestarted
-#gamestarted=0
+global gamestarted
+gamestarted=0
 
 bot = telebot.TeleBot(config.token)
 user_dict = {}
@@ -342,12 +342,12 @@ def process_choose_step(message):
         bot.send_message(chat_id, 'Удачной игры, ' + user.name + '\nТы в команде: ' + user.team)        
         bot.send_message(chat_id, "Задание 1.1.  Добрейшего денечка уважаемые игроки! Вы попали на шоу Угадай мелодию! И первый же вопрос Вам задаст Валдис Пельш!")     
         send_picture(message, 'valdis')  
-        bot.send_message(chat_id, "Введите название этой песни?")  
         send_music(message, 'song#1')
+        bot.send_message(chat_id, "Введите название этой песни?")  
         bot.send_message(chat_id, "Формат ответа: песни, слитно, без пробелов, с маленькой буквы.")
-        #global gamestarted
-        #getstarted==1
-        bot.send_message(chat_id, gamestarted)
+        global gamestarted
+        gamestarted=1
+        #bot.send_message(chat_id, gamestarted)
     except Exception as e:
         bot.reply_to(message, 'oooops')
 
@@ -373,7 +373,7 @@ def give_next_question(msg, code):
     bot.send_message(msg.chat.id, str(questions[code])) 
 
 #@bot.message_handler(commands=['код'])
-@bot.message_handler(func=lambda message: message.text)
+@bot.message_handler(func=lambda message: message.text and gamestarted==1)
 def game(message):
     global currentquestion
     global codeindex
@@ -382,90 +382,90 @@ def game(message):
     global getstarted
     chat_id = message.chat.id
     #user = user_dict[chat_id]
-    if message.text in codes:
-        codeindex=codes.index(message.text)
-        try:
-            if codeindex == 0:
-                bot.send_message(message.chat.id, "Код принят!")
-                save_code_to_base(chat_id, message.from_user.username, str(codes[codeindex]))
-            #send_picture(message, 'photo')
-                give_next_question(message, codeindex)
-           # bot.send_message(message.chat.id, "пупок")
-                questsum=questsum+18
-                #bot.send_message(message.chat.id, questsum)
-           #answerssum +=codeindex
-            
-    #    questionindex=questions.index(codeindex)
-            elif codeindex == 1:
-                bot.send_message(message.chat.id, "Код принят!")
-                save_code_to_base(chat_id, message.from_user.username, str(codes[codeindex]))
-            #send_music(message, 'song')
-                give_next_question(message, codeindex)
-                send_picture(message, 'cool-pike')
-                questsum=questsum+10
-                bot.send_message(message.chat.id, """ Примечание: загадано точное место. Вам потребуется фотокамера. Бумагу с данными на загаданном месте НЕ СРЫВАТЬ!
-            
-    Формат ответа: одно слово на русском.""")
-                                     
-            elif codeindex == 2:
-                bot.send_message(message.chat.id, "Код принят!")
-                give_next_question(message, codeindex)
-                save_code_to_base(chat_id, message.from_user.username, str(codes[codeindex]))
-                questsum=questsum+12
+    another_index_code=message.text.lower()
+    #bot.send_message(message.chat.id, another_index_code)
+    if another_index_code in codes:
+        codeindex=codes.index(another_index_code)
+        #try:
+        if codeindex == 0:
+            bot.send_message(message.chat.id, "Код принят!")
+            save_code_to_base(chat_id, message.from_user.username, str(codes[codeindex]))
+        #send_picture(message, 'photo')
+            give_next_question(message, codeindex)
+       # bot.send_message(message.chat.id, "пупок")
+            #questsum=questsum+18
+            #bot.send_message(message.chat.id, questsum)
+       #answerssum +=codeindex
+        
+#    questionindex=questions.index(codeindex)
+        elif codeindex == 1:
+            bot.send_message(message.chat.id, "Код принят!")
+            save_code_to_base(chat_id, message.from_user.username, str(codes[codeindex]))
+        #send_music(message, 'song')
+            give_next_question(message, codeindex)
+            send_picture(message, 'cool-pike')
+            #questsum=questsum+10
+            bot.send_message(message.chat.id, """ Примечание: загадано точное место. Вам потребуется фотокамера. Бумагу с данными на загаданном месте НЕ СРЫВАТЬ!
+        
+Формат ответа: одно слово на русском.""")
+                                 
+        elif codeindex == 2:
+            bot.send_message(message.chat.id, "Код принят!")
+            give_next_question(message, codeindex)
+            save_code_to_base(chat_id, message.from_user.username, str(codes[codeindex]))
+           #questsum=questsum+12
 
-            
-            elif codeindex == 3:
-                bot.send_message(message.chat.id, "Код принят!")
-                give_next_question(message, codeindex)
-                save_code_to_base(chat_id, message.from_user.username, str(codes[codeindex]))
-                questsum=questsum+12
-            
-            elif codeindex == 4:
-                bot.send_message(message.chat.id, "Код принят!")
-                give_next_question(message, codeindex)
-                save_code_to_base(chat_id, message.from_user.username, str(codes[codeindex]))
-                questsum=questsum+12
-            
-            elif codeindex == 5:
-                bot.send_message(message.chat.id, "Код принят!")
-                give_next_question(message, codeindex)
-                send_picture(message, 'pru')
-                send_picture(message, 'piper')
-                send_picture(message, 'fibi')
-                bot.send_message(message.chat.id, """
+        
+        elif codeindex == 3:
+            bot.send_message(message.chat.id, "Код принят!")
+            give_next_question(message, codeindex)
+            save_code_to_base(chat_id, message.from_user.username, str(codes[codeindex]))
+            #questsum=questsum+12
+        
+        elif codeindex == 4:
+            bot.send_message(message.chat.id, "Код принят!")
+            give_next_question(message, codeindex)
+            save_code_to_base(chat_id, message.from_user.username, str(codes[codeindex]))
+            #questsum=questsum+12
+        
+        elif codeindex == 5:
+            bot.send_message(message.chat.id, "Код принят!")
+            give_next_question(message, codeindex)
+            send_picture(message, 'pru')
+            send_picture(message, 'piper')
+            send_picture(message, 'fibi')
+            bot.send_message(message.chat.id, """
 Скорее осмотрите эти места! Возможно сестры оставили для вас там подсказки!
 
 Примечание: Задание составное из трех частей. Всего загаданных мест три. Вам нужно собрать составной код и вбить его в правильном порядке целиком без пробелов в движок.""")
-                
-                save_code_to_base(chat_id, message.from_user.username, str(codes[codeindex]))
-                questsum=questsum+12
             
-            elif codeindex == 6:
-                bot.send_message(message.chat.id, "Код принят!")
-                give_next_question(message, codeindex)
-                save_code_to_base(chat_id, message.from_user.username, str(codes[codeindex]))
-                questsum=questsum+12
-            
-            elif codeindex == 7:
-                bot.send_message(message.chat.id, "Код принят!")
-                give_next_question(message, codeindex)
-                save_code_to_base(chat_id, message.from_user.username, str(codes[codeindex]))
-                questsum=questsum+12
-            
-            elif codeindex == 8:
-                hintcount=0
-                currentquestion +=1                
-                bot.send_message(message.chat.id, "Код принят!")
-                save_code_to_base(chat_id, message.from_user.username, str(codes[codeindex]))
-            #answerssum +=codeindex
-                endtime=message.date-starttime
-                global getstarted
-                getstarted==0
-                bot.send_message(message.chat.id, "Конец игры! Ваше время "+time.strftime('%H:%M:%S', time.gmtime(endtime)))         
-            else:
-                bot.send_message(message.chat.id, "Код неверный!")
-        except:
-            bot.send_message(message.chat.id, "Что-то пошло не так!")
+            save_code_to_base(chat_id, message.from_user.username, str(codes[codeindex]))
+            #questsum=questsum+12
+        
+        elif codeindex == 6:
+            bot.send_message(message.chat.id, "Код принят!")
+            give_next_question(message, codeindex)
+            save_code_to_base(chat_id, message.from_user.username, str(codes[codeindex]))
+            #questsum=questsum+12
+        
+        elif codeindex == 7:
+            bot.send_message(message.chat.id, "Код принят!")
+            give_next_question(message, codeindex)
+            save_code_to_base(chat_id, message.from_user.username, str(codes[codeindex]))
+            #questsum=questsum+12
+        
+        elif codeindex == 8:
+            hintcount=0
+            currentquestion +=1                
+            bot.send_message(message.chat.id, "Код принят!")
+            save_code_to_base(chat_id, message.from_user.username, str(codes[codeindex]))
+        #answerssum +=codeindex
+            endtime=message.date-starttime
+            global gamestarted
+            gamestarted==0
+            bot.send_message(message.chat.id, "Конец игры! Ваше время "+time.strftime('%H:%M:%S', time.gmtime(endtime)))
+        #except:
+            #bot.send_message(message.chat.id, "Что-то пошло не так!")
     elif message.text not in codes:    
         bot.send_message(message.chat.id, "Неверный код!")
     
